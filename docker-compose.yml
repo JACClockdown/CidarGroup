@@ -1,0 +1,70 @@
+version: '3'
+
+services:
+  #PHP Service
+  backend:
+    build:
+      context: ./CidarApiLaravel
+      dockerfile: Dockerfile
+    image: "cidar-api"
+    container_name: CidarAPI
+    working_dir: /var/www/html
+    environment:
+      - DB_HOST=pgsql
+      - DB_PORT=5432
+      - DB_DATABASE=cidar
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=password
+      - APP_ENV=development
+      - TZ=America/Mexico_City
+    expose:
+      - 8000
+    ports:
+      - 8000:8000
+    volumes:
+      - ./CidarApiLaravel:/var/www/html
+    networks:
+      cidar-api-network:
+        ipv4_address: 172.26.0.3
+    depends_on:
+      - pgsql
+    command: >
+      bash -c "
+        composer install &&
+        php artisan key:generate &&
+        php artisan migrate &&
+        php artisan db:seed &&
+        php artisan serve --host=0.0.0.0 --port=8000"
+
+  #Postgres Service
+  pgsql:
+    image: postgres:15.3
+    container_name: cidar-api-pgsql
+    restart: unless-stopped
+    expose:
+      - 5432
+    ports:
+      - 5432:5432
+    volumes:
+      - cidar-api-pgsql-volume:/docker-entrypoint-initdb.d/
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: cidar
+    networks:
+      cidar-api-network:
+        ipv4_address: 172.26.0.2
+
+
+volumes:
+  cidar-api-pgsql-volume:
+    name: db-cidar-api
+
+networks:
+  cidar-api-network:
+    name: cidar-api-network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.26.0.0/16
+
