@@ -27,13 +27,13 @@ class AuthController extends Controller
         $token = Auth::attempt($credentials);
         
         if (!$token) {
-            return response()->json([
+            return CustomResponse::error([
                 'message' => 'Unauthorized',
             ], 401);
         }
 
         $user = Auth::user();
-        return response()->json([
+        return CustomResponse::success([
             'user' => $user,
             'authorization' => [
                 'token' => $token,
@@ -62,14 +62,12 @@ class AuthController extends Controller
     public function logout()
     {
         Auth::logout();
-        return response()->json([
-            'message' => 'Successfully logged out',
-        ]);
+        return CustomResponse::success('Successfully logged out');
     }
 
     public function refresh()
     {
-        return response()->json([
+        return CustomResponse::success([
             'user' => Auth::user(),
             'authorisation' => [
                 'token' => Auth::refresh(),
